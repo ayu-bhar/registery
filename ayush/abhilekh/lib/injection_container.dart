@@ -6,7 +6,6 @@ import 'package:network_info_plus/network_info_plus.dart';
 
 import 'features/attendance/data/campus_guard_service.dart';
 import 'features/attendance/data/attendance_repository.dart';
-import 'features/attendance/presentation/bloc/attendance_event.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository.dart';
 

@@ -5,6 +5,7 @@ import '../bloc/attendance_event.dart';
 import '../bloc/attendance_state.dart';
 import '../widgets/action_button.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -29,78 +30,156 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       appBar: AppBar(
         title: const Text("Campus Registry"),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.textWhite,
+        titleTextStyle: const TextStyle(
+          color: AppColors.textWhite,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: AppColors.textWhite),
             onPressed: () => context.read<AuthBloc>().logout(),
           )
         ],
       ),
-      body: BlocConsumer<AttendanceBloc, AttendanceState>(
-        listener: (context, state) {
-          if (state is AttendanceSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        child: BlocConsumer<AttendanceBloc, AttendanceState>(
+          listener: (context, state) {
+            if (state is AttendanceSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            } else if (state is AttendanceFailure) {
+              _showErrorDialog(context, state.error);
+            }
+          },
+          builder: (context, state) {
+            // If loading, show spinner and block interactions
+            if (state is AttendanceLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              );
+            }
+
+            // Determine current status
+            String currentStatus = 'OUTSIDE'; // default
+            if (state is AttendanceLoaded) {
+              currentStatus = state.currentStatus;
+            } else if (state is AttendanceSuccess && state.newStatus != null) {
+              currentStatus = state.newStatus!;
+            }
+
+            final isInside = currentStatus == 'INSIDE';
+
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Status Card
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: isInside ? AppColors.primaryGradient : AppColors.secondaryGradient,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isInside ? AppColors.primary : AppColors.secondary).withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.textWhite.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isInside ? Icons.location_city : Icons.location_off,
+                            size: 48,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Status Label
+                        Text(
+                          isInside ? "ON CAMPUS" : "OFF CAMPUS",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textWhite,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        
+                        // Current Status
+                        Text(
+                          currentStatus,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 48),
+                  
+                  // Action Section Title
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Quick Action",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Show "Enter Campus" button if OUTSIDE
+                  if (!isInside)
+                    ActionButton(
+                      label: "ENTER CAMPUS",
+                      color: AppColors.success,
+                      icon: Icons.login_rounded,
+                      onTap: () => context.read<AttendanceBloc>().add(CheckInRequested()),
+                    ),
+                  
+                  // Show "Leave Campus" button if INSIDE
+                  if (isInside)
+                    ActionButton(
+                      label: "LEAVE CAMPUS",
+                      color: AppColors.error,
+                      icon: Icons.logout_rounded,
+                      onTap: () => context.read<AttendanceBloc>().add(CheckOutRequested()),
+                    ),
+                ],
+              ),
             );
-          } else if (state is AttendanceFailure) {
-            _showErrorDialog(context, state.error);
-          }
-        },
-        builder: (context, state) {
-          // If loading, show spinner and block interactions
-          if (state is AttendanceLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          // Determine current status
-          String currentStatus = 'OUTSIDE'; // default
-          if (state is AttendanceLoaded) {
-            currentStatus = state.currentStatus;
-          } else if (state is AttendanceSuccess && state.newStatus != null) {
-            currentStatus = state.newStatus!;
-          }
-
-          final isInside = currentStatus == 'INSIDE';
-
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.location_city, size: 100, color: Colors.blueGrey),
-                const SizedBox(height: 40),
-                Text(
-                  "Current Status: $currentStatus",
-                  style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Select Campus Action",
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-                const SizedBox(height: 30),
-                
-                // Show "Enter Campus" button if OUTSIDE
-                if (!isInside)
-                  ActionButton(
-                    label: "ENTER CAMPUS",
-                    color: Colors.green.shade600,
-                    icon: Icons.login,
-                    onTap: () => context.read<AttendanceBloc>().add(CheckInRequested()),
-                  ),
-                
-                // Show "Leave Campus" button if INSIDE
-                if (isInside)
-                  ActionButton(
-                    label: "LEAVE CAMPUS",
-                    color: Colors.red.shade600,
-                    icon: Icons.logout,
-                    onTap: () => context.read<AttendanceBloc>().add(CheckOutRequested()),
-                  ),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

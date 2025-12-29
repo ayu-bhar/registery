@@ -10,6 +10,7 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/attendance/presentation/bloc/attendance_bloc.dart';
 import 'features/attendance/presentation/pages/home_screen.dart';
 import 'features/auth/presentation/pages/login_screen.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,10 +37,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Student Registry',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.blue,
-        ),
+        theme: AppTheme.lightTheme,
         home: const AuthWrapper(),
       ),
     );
@@ -58,7 +56,7 @@ class AuthWrapper extends StatelessWidget {
           return const StudentHomeScreen();
         }
         return const LoginScreen();
-      },
+      }, 
     );
   }
 }
